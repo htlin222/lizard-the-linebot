@@ -5,6 +5,10 @@ the metadata (sender, timestamp, type, content) to a [Turso](https://turso.tech)
 (libSQL) database. Runs on Cloudflare Workers — free tier is plenty for
 personal volume.
 
+> 📓 **Project notebook:** see [`docs/`](docs/00-overview.md) for IMRaD-styled
+> notes on the protocol quirks, schema choices, runtime tradeoffs, the
+> quote-reply investigation, and the portable-skill design.
+
 > **Note on forwarded messages:** LINE does *not* preserve the original
 > sender when a user forwards a message. The bot only sees that *you* sent
 > it; `source_user_id` is always the forwarder. Original sender info, if
