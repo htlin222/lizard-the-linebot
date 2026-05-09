@@ -31,6 +31,7 @@ export interface TextMessage extends BaseMessage {
   type: "text";
   text: string;
   mention?: { mentionees: MentionItem[] };
+  quotedMessageId?: string;
 }
 
 export interface StickerMessage extends BaseMessage {
@@ -96,4 +97,6 @@ export interface MessageRow {
   raw_payload: string;
   line_timestamp_ms: number;
   received_at_ms: number;
+  quoted_message_id: string | null;
+  is_self_mention: number;
 }

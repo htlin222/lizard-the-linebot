@@ -33,7 +33,7 @@ The skill-local `.env` only needs the Turso pair (LINE keys aren't used here). T
 python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" [--json] <subcommand> [args]
 ```
 
-Subcommands: `latest`, `today`, `search`, `count`, `since`, `get`, `sql`. Default output is a fixed-width table; `--json` emits JSON.
+Subcommands: `latest`, `today`, `search`, `count`, `since`, `get`, `mentions`, `sql`. Default output is a fixed-width table; `--json` emits JSON.
 
 ## References (load on demand)
 
@@ -72,6 +72,14 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" since "2026-05-01"   # absolute
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" count
 ```
+
+### @-mentions of the bot, with quoted originals
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" mentions -n 20
+```
+
+Returns rows where `is_self_mention=1` (i.e. the bot was @-mentioned), LEFT-JOINed against the message they reply-quote (matched on `quoted_message_id` + `source_group_id`). `reply_to_*` columns are NULL when the quoted original isn't in our archive (e.g. it predates the full-group-archive policy).
 
 ### Full row (incl. raw_payload JSON)
 

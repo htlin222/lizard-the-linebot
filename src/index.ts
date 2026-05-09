@@ -32,7 +32,6 @@ export default {
     for (const event of payload.events) {
       if (event.type !== "message") continue;
       const msg = event as MessageEvent;
-      if (!shouldIngest(msg)) continue;
 
       const row = extractRow(msg);
 
@@ -50,7 +49,7 @@ export default {
         console.error("insert failed", err);
       }
 
-      if (msg.replyToken) {
+      if (msg.replyToken && shouldReply(msg)) {
         ctx.waitUntil(
           replyMessage(env, msg.replyToken, "蜥蜴已收到🦎").catch((err) =>
             console.error("reply failed", err),
@@ -63,12 +62,10 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// 1:1 chat: every message ingested. Group/room: only @-mentions of the bot
-// (mentionee with isSelf=true). @all is intentionally NOT a trigger so
-// group-wide pings don't pollute the archive. Non-text group messages
-// can't carry mentions, so they're excluded from groups too — forward
-// them as a DM if you want them saved.
-function shouldIngest(event: MessageEvent): boolean {
+// Every message is ingested for archival. Reply only fires in 1:1 DMs
+// or when the bot is explicitly @-mentioned in a group/room — keeps
+// group chats quiet while the DB stays complete.
+function shouldReply(event: MessageEvent): boolean {
   if (event.source.type === "user") return true;
   if (event.message.type !== "text") return false;
   return (event.message.mention?.mentionees ?? []).some((m) => m.isSelf === true);

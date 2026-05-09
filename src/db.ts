@@ -16,8 +16,9 @@ INSERT INTO messages (
   sticker_package_id, sticker_id,
   file_name, file_size,
   location_title, location_address, location_latitude, location_longitude,
-  raw_payload, line_timestamp_ms, received_at_ms
-) VALUES (?, ?, ?,  ?, ?, ?, ?,  ?, ?,  ?, ?,  ?, ?,  ?, ?, ?, ?,  ?, ?, ?)
+  raw_payload, line_timestamp_ms, received_at_ms,
+  quoted_message_id, is_self_mention
+) VALUES (?, ?, ?,  ?, ?, ?, ?,  ?, ?,  ?, ?,  ?, ?,  ?, ?, ?, ?,  ?, ?, ?,  ?, ?)
 ON CONFLICT(webhook_event_id) DO NOTHING
 `;
 
@@ -46,5 +47,7 @@ export async function insertMessage(
     row.raw_payload,
     row.line_timestamp_ms,
     row.received_at_ms,
+    row.quoted_message_id,
+    row.is_self_mention,
   ]);
 }

@@ -195,6 +195,28 @@ def cmd_get(args):
     return execute("SELECT * FROM messages WHERE id = ?", [args.id])
 
 
+def cmd_mentions(args):
+    """Synthesized view: only @-mentions of the bot, with the quoted
+    original message LEFT-JOINed in so you see what was being replied to.
+    quoted_* columns are NULL when the original isn't in our archive."""
+    sql = (
+        "SELECT m.id, m.source_type, "
+        "  m.user_display_name AS by_who, "
+        "  substr(coalesce(m.text,''), 1, 60) AS text, "
+        "  q.id AS reply_to_id, "
+        "  q.user_display_name AS reply_to_who, "
+        "  substr(coalesce(q.text,''), 1, 60) AS reply_to_text, "
+        "  datetime(m.line_timestamp_ms/1000,'unixepoch','+8 hours') AS at_tw "
+        "FROM messages m "
+        "LEFT JOIN messages q "
+        "  ON m.quoted_message_id = q.message_id "
+        "  AND coalesce(m.source_group_id,'') = coalesce(q.source_group_id,'') "
+        "WHERE m.is_self_mention = 1 "
+        "ORDER BY m.id DESC LIMIT ?"
+    )
+    return execute(sql, [args.n])
+
+
 def cmd_sql(args):
     return execute(args.sql)
 
@@ -229,6 +251,13 @@ def main() -> None:
     sp = sub.add_parser("get", help="full row for one id")
     sp.add_argument("id", type=int)
     sp.set_defaults(fn=cmd_get)
+
+    sp = sub.add_parser(
+        "mentions",
+        help="@-mention messages with the quoted original LEFT-JOINed in",
+    )
+    sp.add_argument("-n", type=int, default=20)
+    sp.set_defaults(fn=cmd_mentions)
 
     sp = sub.add_parser("sql", help="raw SELECT (no params)")
     sp.add_argument("sql")

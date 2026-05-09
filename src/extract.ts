@@ -25,11 +25,17 @@ export function extractRow(event: MessageEvent): MessageRow {
     raw_payload: JSON.stringify(event),
     line_timestamp_ms: event.timestamp,
     received_at_ms: Date.now(),
+    quoted_message_id: null,
+    is_self_mention: 0,
   };
 
   switch (m.type) {
     case "text":
       row.text = m.text;
+      row.quoted_message_id = m.quotedMessageId ?? null;
+      if (m.mention?.mentionees?.some((x) => x.isSelf === true)) {
+        row.is_self_mention = 1;
+      }
       break;
     case "sticker":
       row.sticker_package_id = m.packageId;

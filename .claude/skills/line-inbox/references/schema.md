@@ -25,11 +25,15 @@ Source of truth: [`schema/001_init.sql`](https://github.com/htlin222/lizard-the-
 | `raw_payload` | TEXT | full LINE event JSON — backfill any future column from this |
 | `line_timestamp_ms` | INTEGER | LINE's timestamp (UTC, ms since epoch) |
 | `received_at_ms` | INTEGER | our ingest time (`Date.now()` in the Worker) |
+| `quoted_message_id` | TEXT | LINE message id of the message this one replies to (text + quote-reply only); JOIN to `messages.message_id` |
+| `is_self_mention` | INTEGER | 1 if this message @-mentions the bot itself (mentionee with `isSelf: true`), else 0. Set at ingest |
 
 ## Indexes
 
 - `idx_messages_user_time` on `(source_user_id, line_timestamp_ms DESC)`
 - `idx_messages_type` on `(message_type)`
+- `idx_messages_quoted` on `(quoted_message_id)`
+- `idx_messages_self_mention` on `(is_self_mention, line_timestamp_ms DESC)`
 
 ## Time handling
 

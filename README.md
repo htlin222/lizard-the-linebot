@@ -47,19 +47,31 @@ For each `POST /webhook`:
 
 Unknown event types (follow, unfollow, postback, etc.) are silently skipped.
 
-### What gets saved
+### What gets saved & when does it reply
+
+Every message that hits the webhook is saved to the DB (full archive).
+The reply (`蜥蜴已收到🦎`) is gated separately — silent in groups unless you @-mention the bot, so the chat stays quiet.
 
 | Where | Saved? | Reply? |
 |---|---|---|
-| 1:1 DM | ✅ every message | ✅ `蜥蜴已收到🦎` |
-| Group / multi-person room, @lizard mentioned | ✅ | ✅ |
-| Group / multi-person room, no mention | ❌ dropped | ❌ |
-| Group / multi-person room, `@all` | ❌ dropped (intentional — no group-ping spam) | ❌ |
-| Group / multi-person room, non-text (image/sticker/file/…) | ❌ dropped (can't carry mentions; DM the bot instead) | ❌ |
+| 1:1 DM | ✅ | ✅ |
+| Group / room, any message | ✅ | ❌ silent |
+| Group / room, @lizard mentioned | ✅ | ✅ |
+| Group / room, `@all` | ✅ | ❌ silent (intentional — no group-ping spam) |
 
-The gate is `shouldIngest()` at the bottom of `src/index.ts` — checks `event.message.mention.mentionees[].isSelf` for the in-group case.
+The reply gate is `shouldReply()` at the bottom of `src/index.ts` — checks `event.message.mention.mentionees[].isSelf`.
 
 To receive group events at all, **Allow bot to join group chats** must be **Enabled** in the LINE Console → Messaging API tab.
+
+### Quote-reply (replying to a previous message)
+
+When someone replies to message X and your message ends up in our archive, LINE includes `quotedMessageId: X.message_id` in the payload. We store it in `quoted_message_id`, and if X is also in our archive (it usually is now, since groups save everything) you can JOIN them. The skill exposes this via:
+
+```bash
+python3 .claude/skills/line-inbox/scripts/inbox.py mentions
+```
+
+— @-mention rows with the quoted original LEFT-JOINed in. Originals from before the full-archive era show up as NULL `reply_to_*` columns and are unrecoverable (LINE has no public API to fetch arbitrary historical text).
 
 ---
 
