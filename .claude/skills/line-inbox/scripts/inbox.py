@@ -11,16 +11,31 @@ import sys
 import urllib.error
 import urllib.request
 
-DEFAULT_ENV = pathlib.Path("/Users/htlin/lizard-the-linebot/.env")
+SKILL_ROOT = pathlib.Path(__file__).resolve().parent.parent
+SKILL_ENV = SKILL_ROOT / ".env"
+PROJECT_ENV = pathlib.Path("/Users/htlin/lizard-the-linebot/.env")
 
 
 def load_creds() -> tuple[str, str]:
-    """Resolve URL + token. The repo's .env always wins over shell env vars,
-    because the user may have a different TURSO_DATABASE_URL exported for
-    another project. Only fall back to env vars if the .env is missing.
-    Override the file path with LINE_INBOX_ENV=/path/to/.env."""
-    env_path = pathlib.Path(os.environ.get("LINE_INBOX_ENV", DEFAULT_ENV))
-    if env_path.exists():
+    """Resolve URL + token. Precedence:
+
+    1. LINE_INBOX_ENV=/path/to/.env (explicit override)
+    2. Skill-local .env (next to SKILL.md) — makes the skill portable
+    3. Project .env at /Users/htlin/lizard-the-linebot/.env — fallback
+    4. Shell env vars (TURSO_*) — last resort
+
+    File paths win over shell env vars because the user has another
+    Turso DB exported globally; reading env first would hit the wrong DB.
+    """
+    candidates: list[pathlib.Path] = []
+    override = os.environ.get("LINE_INBOX_ENV")
+    if override:
+        candidates.append(pathlib.Path(override))
+    candidates += [SKILL_ENV, PROJECT_ENV]
+
+    for env_path in candidates:
+        if not env_path.exists():
+            continue
         env: dict[str, str] = {}
         for line in env_path.read_text().splitlines():
             line = line.strip()
@@ -38,8 +53,8 @@ def load_creds() -> tuple[str, str]:
     if url and token:
         return _to_https(url), token
     sys.exit(
-        f"no creds: put TURSO_DATABASE_URL + TURSO_AUTH_TOKEN in {env_path}, "
-        f"or set LINE_INBOX_ENV=/path/to/.env"
+        f"no creds: put TURSO_DATABASE_URL + TURSO_AUTH_TOKEN in "
+        f"{SKILL_ENV} or {PROJECT_ENV}, or set LINE_INBOX_ENV=/path/to/.env"
     )
 
 
