@@ -16,7 +16,16 @@ Query the personal LINE message archive captured by [lizard-the-linebot](https:/
 export CLAUDE_SKILL_DIR=<path reported by the Skill tool's "Base directory">
 ```
 
-Credentials default to `/Users/htlin/lizard-the-linebot/.env`. **The file always wins over `TURSO_*` env vars** because the user has another Turso DB exported globally. Override the file path with `LINE_INBOX_ENV=/somewhere/else/.env`.
+Credentials are looked up in this order:
+
+1. `LINE_INBOX_ENV=/path/to/.env` (explicit override)
+2. **Skill-local `.env`** at `${CLAUDE_SKILL_DIR}/.env` (gitignored; ships with the skill — copy/move it anywhere and creds go with it)
+3. Project `.env` at `/Users/htlin/lizard-the-linebot/.env` (fallback)
+4. Shell env vars `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (last resort)
+
+File paths win over shell env vars on purpose — the user has another Turso DB exported globally, so reading env first would silently hit the wrong DB.
+
+The skill-local `.env` only needs the Turso pair (LINE keys aren't used here). The skill folder ships its own `.gitignore` to keep `.env` and `__pycache__/` out of any repo it lives in.
 
 ## Invocation
 
