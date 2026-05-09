@@ -21,6 +21,7 @@ Discussion) so the *why* and *how-we-verified* survive alongside the
 | [03](03-cloudflare-workers-turso.md) | Workers + Turso runtime choices | Why this stack, deployment gotchas, free-tier math |
 | [04](04-quote-reply-investigation.md) | Recovering quoted-original messages | An investigation + a behavior change driven by a real user question |
 | [05](05-claude-code-skill-portability.md) | Project-local Claude Code skill | Cred precedence, symlink mirror, gitignore strategy |
+| [06](06-distilled-principles.md) | **Distilled architectural principles** | Project-agnostic patterns abstracted from 01–05 — read this first if you're starting a new integration |
 
 ## Status snapshot
 
