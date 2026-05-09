@@ -1,0 +1,5 @@
+# Copy to .dev.vars and fill in. Never commit .dev.vars.
+LINE_CHANNEL_SECRET=
+LINE_CHANNEL_ACCESS_TOKEN=
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=

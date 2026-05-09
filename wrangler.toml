@@ -1,0 +1,14 @@
+name = "lizard-the-linebot"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+workers_dev = true
+
+# Secrets are set out-of-band:
+#   wrangler secret put LINE_CHANNEL_SECRET
+#   wrangler secret put LINE_CHANNEL_ACCESS_TOKEN
+#   wrangler secret put TURSO_DATABASE_URL
+#   wrangler secret put TURSO_AUTH_TOKEN
+# Locally, put them in .dev.vars.
+
+[observability]
+enabled = true
