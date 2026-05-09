@@ -47,13 +47,19 @@ For each `POST /webhook`:
 
 Unknown event types (follow, unfollow, postback, etc.) are silently skipped.
 
-### Group chat behavior
+### What gets saved
 
-In a 1:1 chat, every message is saved and gets a `蜥蜴已收到🦎` reply.
+| Where | Saved? | Reply? |
+|---|---|---|
+| 1:1 DM | ✅ every message | ✅ `蜥蜴已收到🦎` |
+| Group / multi-person room, @lizard mentioned | ✅ | ✅ |
+| Group / multi-person room, no mention | ❌ dropped | ❌ |
+| Group / multi-person room, `@all` | ❌ dropped (intentional — no group-ping spam) | ❌ |
+| Group / multi-person room, non-text (image/sticker/file/…) | ❌ dropped (can't carry mentions; DM the bot instead) | ❌ |
 
-In a **group or multi-person room**, every message is *still saved* — but the reply only fires when the bot is explicitly @-mentioned (i.e. one of `message.mention.mentionees` has `isSelf: true`). `@all` mentions are ignored on purpose so group-wide pings don't spam acks. The mention check lives in `shouldReply()` at the bottom of `src/index.ts`.
+The gate is `shouldIngest()` at the bottom of `src/index.ts` — checks `event.message.mention.mentionees[].isSelf` for the in-group case.
 
-To even receive group events, **Allow bot to join group chats** must be **Enabled** in the LINE Console → Messaging API tab.
+To receive group events at all, **Allow bot to join group chats** must be **Enabled** in the LINE Console → Messaging API tab.
 
 ---
 
