@@ -19,9 +19,18 @@ interface BaseMessage {
   type: string;
 }
 
+export interface MentionItem {
+  index: number;
+  length: number;
+  type: "user" | "all";
+  userId?: string;
+  isSelf?: boolean;
+}
+
 export interface TextMessage extends BaseMessage {
   type: "text";
   text: string;
+  mention?: { mentionees: MentionItem[] };
 }
 
 export interface StickerMessage extends BaseMessage {

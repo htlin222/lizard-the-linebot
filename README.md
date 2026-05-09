@@ -20,7 +20,7 @@ personal volume.
 │ on phone│             │              │   (POST)    │  (lizard-the-      │
 └─────────┘             └──────────────┘             │   linebot)         │
       ▲                        │                     │                    │
-      │  "✓ saved"             │                     │ 1. verify HMAC     │
+      │  "蜥蜴已收到🦎"             │                     │ 1. verify HMAC     │
       └────────────────────────┤                     │ 2. resolve display │
                                │                     │    name (LINE API) │
                                │  reply API          │ 3. INSERT row      │
@@ -42,10 +42,18 @@ For each `POST /webhook`:
    - Map the event to a row (text/sticker/file/location have type-specific columns; everything is also dumped into `raw_payload` as JSON).
    - Call `GET /v2/bot/profile/{userId}` to resolve the sender's display name.
    - `INSERT … ON CONFLICT(webhook_event_id) DO NOTHING` — idempotent against LINE redeliveries.
-   - Send "✓ saved" via `POST /v2/bot/message/reply` (after the 200, via `ctx.waitUntil`).
+   - Send "蜥蜴已收到🦎" via `POST /v2/bot/message/reply` (after the 200, via `ctx.waitUntil`).
 4. Return `200 ok`.
 
 Unknown event types (follow, unfollow, postback, etc.) are silently skipped.
+
+### Group chat behavior
+
+In a 1:1 chat, every message is saved and gets a `蜥蜴已收到🦎` reply.
+
+In a **group or multi-person room**, every message is *still saved* — but the reply only fires when the bot is explicitly @-mentioned (i.e. one of `message.mention.mentionees` has `isSelf: true`). `@all` mentions are ignored on purpose so group-wide pings don't spam acks. The mention check lives in `shouldReply()` at the bottom of `src/index.ts`.
+
+To even receive group events, **Allow bot to join group chats** must be **Enabled** in the LINE Console → Messaging API tab.
 
 ---
 
@@ -67,7 +75,7 @@ Local secrets live in `.env` and `.dev.vars` (both gitignored).
 ## Daily use
 
 Forward any message to `lizard-inbox` from your LINE app. You'll get
-`✓ saved` back within ~2s. To inspect what landed:
+`蜥蜴已收到🦎` back within ~2s. To inspect what landed:
 
 ```bash
 # Last 20
@@ -125,7 +133,7 @@ printf '%s' "NEW_VALUE" | pnpm dlx wrangler secret put LINE_CHANNEL_SECRET
 
 ### Change the ack reply
 
-`src/index.ts` — search for `"✓ saved"`. Whatever string you put there is sent back to LINE. Limit ~2000 chars.
+`src/index.ts` — search for `"蜥蜴已收到🦎"`. Whatever string you put there is sent back to LINE. Limit ~2000 chars.
 
 ### Capture additional fields
 
