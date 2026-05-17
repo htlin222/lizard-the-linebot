@@ -62,11 +62,11 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// Every message is ingested for archival. Reply only fires in 1:1 DMs
-// or when the bot is explicitly @-mentioned in a group/room — keeps
-// group chats quiet while the DB stays complete.
+// Every message is ingested for archival. Reply only fires when the bot
+// is explicitly @-mentioned in a group/room — DMs stay silent too, so
+// the bot never speaks unless directly summoned.
 function shouldReply(event: MessageEvent): boolean {
-  if (event.source.type === "user") return true;
+  if (event.source.type === "user") return false;
   if (event.message.type !== "text") return false;
   return (event.message.mention?.mentionees ?? []).some((m) => m.isSelf === true);
 }

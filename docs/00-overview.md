@@ -28,7 +28,7 @@ Discussion) so the *why* and *how-we-verified* survive alongside the
 
 - **Code:** TypeScript on Cloudflare Workers, no framework (~80 LOC entrypoint).
 - **DB:** Turso (`lizard`) in `aws-ap-northeast-1`. Single denormalized `messages` table + `raw_payload` column.
-- **Behavior:** every message saved (DM + group + room); reply (`蜥蜴已收到🦎`) only fires in DMs or when the bot is `@`-mentioned in a group.
+- **Behavior:** every message saved (DM + group + room); reply (`蜥蜴已收到🦎`) only fires when the bot is `@`-mentioned in a group (DMs are silent too).
 - **Skill:** project-local at `.claude/skills/line-inbox/`, mirrored read-only into `~/Mail` via symlink.
 
 ## Reading order

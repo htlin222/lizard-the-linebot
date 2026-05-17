@@ -25,10 +25,10 @@ personal volume.
 └─────────┘             └──────────────┘             │   linebot)         │
       ▲                        │                     │                    │
       │  "蜥蜴已收到🦎"             │                     │ 1. verify HMAC     │
-      └────────────────────────┤                     │ 2. resolve display │
-                               │                     │    name (LINE API) │
-                               │  reply API          │ 3. INSERT row      │
-                               └◀────────────────────┤ 4. ack reply       │
+      │  (only when            │                     │ 2. resolve display │
+      │   @-mentioned          │                     │    name (LINE API) │
+      │   in a group)          │  reply API          │ 3. INSERT row      │
+      └────────────────────────┤◀────────────────────┤ 4. ack iff mention │
                                                      └─────────┬──────────┘
                                                                │
                                                                ▼
@@ -46,7 +46,7 @@ For each `POST /webhook`:
    - Map the event to a row (text/sticker/file/location have type-specific columns; everything is also dumped into `raw_payload` as JSON).
    - Call `GET /v2/bot/profile/{userId}` to resolve the sender's display name.
    - `INSERT … ON CONFLICT(webhook_event_id) DO NOTHING` — idempotent against LINE redeliveries.
-   - Send "蜥蜴已收到🦎" via `POST /v2/bot/message/reply` (after the 200, via `ctx.waitUntil`).
+   - If the bot was @-mentioned (group/room only), send "蜥蜴已收到🦎" via `POST /v2/bot/message/reply` (after the 200, via `ctx.waitUntil`).
 4. Return `200 ok`.
 
 Unknown event types (follow, unfollow, postback, etc.) are silently skipped.
@@ -54,11 +54,11 @@ Unknown event types (follow, unfollow, postback, etc.) are silently skipped.
 ### What gets saved & when does it reply
 
 Every message that hits the webhook is saved to the DB (full archive).
-The reply (`蜥蜴已收到🦎`) is gated separately — silent in groups unless you @-mention the bot, so the chat stays quiet.
+The reply (`蜥蜴已收到🦎`) is gated separately — only fires when the bot is explicitly @-mentioned in a group/room. DMs stay silent too, so the bot never speaks unless directly summoned.
 
 | Where | Saved? | Reply? |
 |---|---|---|
-| 1:1 DM | ✅ | ✅ |
+| 1:1 DM | ✅ | ❌ silent |
 | Group / room, any message | ✅ | ❌ silent |
 | Group / room, @lizard mentioned | ✅ | ✅ |
 | Group / room, `@all` | ✅ | ❌ silent (intentional — no group-ping spam) |
@@ -96,8 +96,7 @@ Local secrets live in `.env` and `.dev.vars` (both gitignored).
 
 ## Daily use
 
-Forward any message to `lizard-inbox` from your LINE app. You'll get
-`蜥蜴已收到🦎` back within ~2s. To inspect what landed:
+Forward any message to `lizard-inbox` from your LINE app. The bot stays silent (DMs no longer auto-ack) but the row lands in Turso within ~2s. To inspect what landed:
 
 ```bash
 # Last 20
@@ -134,8 +133,8 @@ output. Leave it running while you forward a test message.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | LINE shows "Webhook URL verification failed" | Worker not reachable, or returning non-2xx for empty `events` payload | `pnpm dlx wrangler tail` while clicking Verify; should see `200 ok`. If 401, the channel secret in CF doesn't match LINE. |
-| Forwarded messages give no reply, no row | `Use webhook` toggle off, or `Auto-response` was re-enabled and is consuming the event | Re-check toggles in LINE Console → Messaging API. Tail logs to confirm whether request hits us at all. |
-| Reply works but no row in DB | Turso credentials wrong, or DB schema not applied | `wrangler tail` → look for `insert failed` log line. Verify with `turso db shell lizard ".schema messages"`. |
+| Forwarded message lands no row in DB | `Use webhook` toggle off, or `Auto-response` was re-enabled and is consuming the event | Re-check toggles in LINE Console → Messaging API. Tail logs to confirm whether request hits us at all. (No DM auto-ack anymore — confirm via DB row, not a reply.) |
+| Row lands in DB but @-mention reply doesn't fire in group | Turso write succeeded but reply API call failed — or the message wasn't actually an @-mention | `wrangler tail` → look for `reply failed`. Verify the payload had `mention.mentionees[].isSelf === true`. |
 | `✗ invalid signature` (401) on a request you signed yourself | Body bytes differ between sign and send (extra newline, encoding) | Use `printf '%s'` not `echo`; sign the *raw* bytes. |
 
 **Rotate a secret** (LINE channel secret got leaked, etc.):

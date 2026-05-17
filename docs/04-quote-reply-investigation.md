@@ -61,8 +61,8 @@ design space narrowed:
 
 To keep the chat itself quiet, *reply* gating was decoupled from
 *ingestion* gating: every message is saved, but the
-`蜥蜴已收到🦎` reply still only fires for DMs or explicit `@`-mentions
-(`shouldReply()` in `src/index.ts`).
+`蜥蜴已收到🦎` reply only fires for explicit `@`-mentions in a group/room
+— DMs are silent too (`shouldReply()` in `src/index.ts`).
 
 A new column pair (`quoted_message_id`, `is_self_mention`) was added
 plus a skill subcommand `inbox.py mentions` that performs the
