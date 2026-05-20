@@ -1,0 +1,19 @@
+# Personal context used as illustration in docs/.
+#
+# The docs are anonymized with placeholders (e.g. `<your-name>`, `<home>`).
+# If you want to recover the original author's specific values for your own
+# reference, copy this file to `personal.config.yml` (gitignored) and fill in.
+# Most readers can ignore this file — the placeholders in docs/ stand alone.
+#
+#   cp personal.config.example.yml personal.config.yml
+
+# Referenced in docs/04-quote-reply-investigation.md
+# Display name as it appears in @-mention transcripts.
+display_name: "<your-name>"                 # e.g. "Alice(Dr. A)"
+
+# Referenced in docs/05-claude-code-skill-portability.md
+home_dir: "<home>"                          # e.g. "/Users/alice"
+project_dir: "<home>/lizard-the-linebot"
+other_repo_dir: "<home>/<other-repo>"       # second repo that mirrors the skill, e.g. "~/Notes"
+other_turso_host: "<other-db>.turso.io"     # an unrelated Turso DB you have exported globally
+github_user: "<your-gh-handle>"

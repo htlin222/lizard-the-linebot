@@ -6,10 +6,13 @@ The CLI for querying the archive lives as a Claude Code skill at
 `.claude/skills/line-inbox/`. Two design constraints shaped it:
 
 1. The skill must work in *this* repo and from a *separate* repo
-   (`~/Mail`) that also wants to query the archive.
+   (`<home>/<other-repo>`) that also wants to query the archive.
 2. The user has another Turso project's credentials globally exported
    in their shell. Naive env-var lookup would silently route queries
    to the wrong DB.
+
+> Placeholders like `<home>` and `<other-repo>` are defined in
+> [`personal.config.example.yml`](../personal.config.example.yml).
 
 ## Methods
 
@@ -28,33 +31,33 @@ The skill is structured per Claude Code conventions:
 
 1. `LINE_INBOX_ENV=/path/to/.env` (explicit override)
 2. **Skill-local `.env`** at `${CLAUDE_SKILL_DIR}/.env` (resolved via `__file__`)
-3. Project `.env` at `/Users/htlin/lizard-the-linebot/.env` (fallback)
+3. Project `.env` at `<home>/lizard-the-linebot/.env` (fallback)
 4. Shell env vars (last resort)
 
 **Files always win over env vars** because of constraint #2 — reading
 `os.environ['TURSO_DATABASE_URL']` first would hit the unrelated
-`prompt-polish-htlin222.turso.io` instance the user has exported
-globally, and the first symptom would be `no such table: messages`
-(seen during initial smoke test on the unfixed code).
+`<other-db>.turso.io` instance the user has exported globally, and
+the first symptom would be `no such table: messages` (seen during
+initial smoke test on the unfixed code).
 
 Verification of the precedence: temporarily renamed the project
 `.env` aside, ran `inbox.py count`, confirmed it still returned the
 right rows (proof the skill-local `.env` was loaded), then restored.
 
-For cross-repo use, the skill in `~/Mail` is an absolute symlink:
+For cross-repo use, the skill in `<home>/<other-repo>` is an absolute symlink:
 
 ```
-~/Mail/.claude/skills/line-inbox -> /Users/htlin/lizard-the-linebot/.claude/skills/line-inbox
+<home>/<other-repo>/.claude/skills/line-inbox -> <home>/lizard-the-linebot/.claude/skills/line-inbox
 ```
 
-`~/Mail/.gitignore` line 18 excludes the path so git doesn't try to
-commit a machine-specific symlink target.
+`<home>/<other-repo>/.gitignore` line 18 excludes the path so git
+doesn't try to commit a machine-specific symlink target.
 
 ## Results
 
 - `git check-ignore -v .env` confirms the skill-local `.gitignore` masks the file in any consuming repo.
 - Token leak check (`git diff --cached | grep -F "$TOKEN_PREFIX"`) before each commit returns 0 hits — verified across all skill commits (`1b3196e`, `f027ca1`, `41f8366`).
-- Same `inbox.py` invocation works identically from `/Users/htlin/lizard-the-linebot/` and `/Users/htlin/Mail/`; mtime + SHA on both paths match (confirms the symlink is live, not a stale copy).
+- Same `inbox.py` invocation works identically from `<home>/lizard-the-linebot/` and `<home>/<other-repo>/`; mtime + SHA on both paths match (confirms the symlink is live, not a stale copy).
 
 ## Discussion
 
@@ -62,13 +65,14 @@ Symlink-as-mirror is the right call for a one-user, one-machine
 mirror. Trade-offs we accepted:
 
 - **Absolute target** breaks if either repo moves. Acceptable — both
-  paths are stable user-home subdirectories.
+  paths are stable home-directory subdirectories.
 - **No version pinning** between the two repos. If `inbox.py`
   develops a bug, both repos see the bug instantly. Acceptable, and
   arguably desirable — the alternative (manual sync) would drift.
-- **Mail commits get a constant `??` line** without the gitignore
-  entry, easy to forget. We added a comment next to the gitignore line
-  explaining the symlink intent so future-self doesn't remove it.
+- **The other repo's commits get a constant `??` line** without the
+  gitignore entry, easy to forget. We added a comment next to the
+  gitignore line explaining the symlink intent so future-self doesn't
+  remove it.
 
 What we didn't do: package the skill as an npm/pip distributable.
 That would be the right move for a multi-user skill, but for "one

@@ -14,8 +14,10 @@ and a behavior change.
 We had a freshly-archived row (id=14) that fit the pattern:
 
 ```
-group  @林協霆(Dr. 蜥蜴)  一個星期後換頭貼   ← user's @-mention reply
+group  @<your-name>  一個星期後換頭貼   ← user's @-mention reply
 ```
+
+> `<your-name>` is a placeholder — see [`personal.config.example.yml`](../personal.config.example.yml).
 
 Three things to check:
 

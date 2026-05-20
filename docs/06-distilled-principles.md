@@ -203,8 +203,8 @@ version flip), or package level (npm/PyPI). Never `cp` and "remember
 to sync."
 
 **This project:** the `line-inbox` skill is owned by the
-`lizard-the-linebot` repo and exposed in `~/Mail` via an absolute
-symlink. One edit, both projects pick it up. Cloudflare deploys
+`lizard-the-linebot` repo and exposed in a second local repo
+(`<home>/<other-repo>`) via an absolute symlink. One edit, both projects pick it up. Cloudflare deploys
 flip atomically per version; any rollback is a single command.
 
 **Generalized:** the cost of two sources is not "I have to update
