@@ -16,6 +16,37 @@ personal volume.
 
 ---
 
+## Why this exists
+
+LINE is a black box. Useful things land there constantly — a date a friend
+proposed, a deadline mentioned in passing, an article you'll read "later",
+a thing your partner asked you to pick up — and then they sink. Search is
+shallow, *Keep* is fiddly, and nothing leaves LINE in a form another
+program can read.
+
+**This bot turns LINE into an inbox you own.** Forward anything (text,
+sticker, location, file, image) to `lizard-inbox`; the webhook writes a row
+to a Turso (libSQL) database within ~2 seconds. The LINE side is just
+capture — the DB is the integration surface.
+
+**Once it's in SQL, an agent can read it.** A Claude Code skill
+([`.claude/skills/line-inbox`](.claude/skills/line-inbox/SKILL.md)) ships
+with this repo and queries the table directly, so prompts like *"pull the
+dates I forwarded this week and add them to my calendar"* or *"turn the
+asks in my Friday forwards into todos"* work end-to-end. The agent
+extracts dates, names, and action items from the rows and hands them off
+to whatever scheduling / todo tool you've wired up.
+
+You keep using LINE the way you already do — your forwards just become
+queryable, agent-readable, and yours.
+
+```
+LINE forward  →  webhook  →  your own DB  →  agent  →  calendar / todos / search
+   (capture)                  (your data)              (action)
+```
+
+---
+
 ## How it works
 
 ```
