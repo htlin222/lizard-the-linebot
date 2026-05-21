@@ -1,10 +1,10 @@
 # Project notebook — overview
 
-Personal LINE-message archiver: forward anything to the bot
-(`lizard-inbox`, `@927pjtfa`), and the bot writes it to a Turso libSQL
-database for later querying. Lives at
-`https://lizard-the-linebot.hsieh-ting-lin.workers.dev/webhook` on
-Cloudflare Workers.
+Personal LINE-message archiver: forward anything to the bot (a LINE
+channel you create, e.g. `lizard-inbox`), and the bot writes it to a
+Turso libSQL database for later querying. Lives at
+`https://lizard-the-linebot.<your-cf-subdomain>.workers.dev/webhook`
+on Cloudflare Workers.
 
 These docs capture **non-obvious lessons** picked up during the build —
 things that aren't recoverable from reading the code alone. Each doc

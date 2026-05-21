@@ -110,15 +110,17 @@ python3 .claude/skills/line-inbox/scripts/inbox.py mentions
 
 ---
 
-## What's deployed
+## What gets deployed
 
-| Thing | Where |
+After setup you'll have something like:
+
+| Thing | Example |
 |---|---|
-| Worker | `https://lizard-the-linebot.hsieh-ting-lin.workers.dev` |
+| Worker | `https://lizard-the-linebot.<your-cf-subdomain>.workers.dev` |
 | Webhook endpoint | `POST /webhook` |
 | Health check | `GET /` → `lizard is alive` |
-| Turso DB | `lizard` (region `aws-ap-northeast-1`, Tokyo) |
-| LINE channel | `lizard-inbox` (`@927pjtfa`, channel ID `2010025852`) |
+| Turso DB | `lizard` (pick a region close to you, e.g. `aws-ap-northeast-1` Tokyo) |
+| LINE channel | your own `lizard-inbox` (LINE assigns `@<bot-id>` + a numeric channel ID) |
 | Cloudflare secrets | `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` |
 
 Local secrets live in `.env` and `.dev.vars` (both gitignored).
