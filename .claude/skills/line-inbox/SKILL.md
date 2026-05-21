@@ -90,10 +90,12 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" attachments --missing    # only r
 
 `image`/`video`/`audio`/`file` messages have their bytes pulled into the `lizard-attachments` R2 bucket at key `YYYY-MM/<messageId>` — `r2_key` on the row points at the object. `--missing` finds rows where the download didn't land (transient failure, or the message arrived before R2 archival was deployed). Within the LINE 7-day content-retention window, missing rows can be retro-fetched; after that they're gone.
 
-To download the bytes locally:
+To download the bytes locally — `<bucket>/<key>` is a single slash-joined arg, and `--remote` is required to hit the production bucket (otherwise wrangler looks in its local cache):
 
 ```bash
-wrangler r2 object get lizard-attachments <r2_key> --file ./local-name
+pnpm dlx wrangler r2 object get "lizard-attachments/$R2_KEY" --remote --file ./local-name
+# or pipe to stdout:
+pnpm dlx wrangler r2 object get "lizard-attachments/$R2_KEY" --remote --pipe > out.bin
 ```
 
 ### Full row (incl. raw_payload JSON)

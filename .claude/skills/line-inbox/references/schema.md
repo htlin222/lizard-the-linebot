@@ -42,8 +42,14 @@ Source of truth: [`schema/001_init.sql`](https://github.com/htlin222/lizard-the-
 `image`, `video`, `audio`, and `file` messages get their bytes pulled from LINE's content endpoint and stashed in the `lizard-attachments` R2 bucket. The DB row's `r2_key` points at the object. To pull the bytes locally:
 
 ```bash
-wrangler r2 object get lizard-attachments <r2_key> --file ./local-name
+# bucket and key are joined with /, as a single positional argument
+wrangler r2 object get "lizard-attachments/$R2_KEY" --remote --file ./local-name
+
+# or stream to stdout / another process
+wrangler r2 object get "lizard-attachments/$R2_KEY" --remote --pipe > out.bin
 ```
+
+The `--remote` flag forces a hit on the real bucket instead of the local wrangler cache.
 
 LINE retains content for ~7 days, so a NULL `r2_key` on a binary row older than that is unrecoverable. Within the window, you can re-fetch by hitting `GET /v2/bot/message/{message_id}/content` with the channel access token.
 
