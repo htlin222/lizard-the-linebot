@@ -20,7 +20,7 @@ Credentials are looked up in this order:
 
 1. `LINE_INBOX_ENV=/path/to/.env` (explicit override)
 2. **Skill-local `.env`** at `${CLAUDE_SKILL_DIR}/.env` (gitignored; ships with the skill — copy/move it anywhere and creds go with it)
-3. Project `.env` at `/Users/htlin/lizard-the-linebot/.env` (fallback)
+3. Project `.env` at `<repo>/.env` (resolved relative to this script's location) (fallback)
 4. Shell env vars `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (last resort)
 
 File paths win over shell env vars on purpose — the user has another Turso DB exported globally, so reading env first would silently hit the wrong DB.
@@ -33,7 +33,7 @@ The skill-local `.env` only needs the Turso pair (LINE keys aren't used here). T
 python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" [--json] <subcommand> [args]
 ```
 
-Subcommands: `latest`, `today`, `search`, `count`, `since`, `get`, `mentions`, `sql`. Default output is a fixed-width table; `--json` emits JSON.
+Subcommands: `latest`, `today`, `search`, `count`, `since`, `get`, `mentions`, `attachments`, `sql`. Default output is a fixed-width table; `--json` emits JSON.
 
 ## References (load on demand)
 
@@ -80,6 +80,21 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" mentions -n 20
 ```
 
 Returns rows where `is_self_mention=1` (i.e. the bot was @-mentioned), LEFT-JOINed against the message they reply-quote (matched on `quoted_message_id` + `source_group_id`). `reply_to_*` columns are NULL when the quoted original isn't in our archive (e.g. it predates the full-group-archive policy).
+
+### Attachments archived to R2
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" attachments              # all binary-type rows
+python3 "${CLAUDE_SKILL_DIR}/scripts/inbox.py" attachments --missing    # only rows where r2_key IS NULL
+```
+
+`image`/`video`/`audio`/`file` messages have their bytes pulled into the `lizard-attachments` R2 bucket at key `YYYY-MM/<messageId>` — `r2_key` on the row points at the object. `--missing` finds rows where the download didn't land (transient failure, or the message arrived before R2 archival was deployed). Within the LINE 7-day content-retention window, missing rows can be retro-fetched; after that they're gone.
+
+To download the bytes locally:
+
+```bash
+wrangler r2 object get lizard-attachments <r2_key> --file ./local-name
+```
 
 ### Full row (incl. raw_payload JSON)
 

@@ -27,6 +27,7 @@ Source of truth: [`schema/001_init.sql`](https://github.com/htlin222/lizard-the-
 | `received_at_ms` | INTEGER | our ingest time (`Date.now()` in the Worker) |
 | `quoted_message_id` | TEXT | LINE message id of the message this one replies to (text + quote-reply only); JOIN to `messages.message_id` |
 | `is_self_mention` | INTEGER | 1 if this message @-mentions the bot itself (mentionee with `isSelf: true`), else 0. Set at ingest |
+| `r2_key` | TEXT | R2 object key (`YYYY-MM/<messageId>`) where the bytes live, for `image`/`video`/`audio`/`file` rows. NULL = no bytes (text/sticker/location), or the download failed |
 
 ## Indexes
 
@@ -34,6 +35,17 @@ Source of truth: [`schema/001_init.sql`](https://github.com/htlin222/lizard-the-
 - `idx_messages_type` on `(message_type)`
 - `idx_messages_quoted` on `(quoted_message_id)`
 - `idx_messages_self_mention` on `(is_self_mention, line_timestamp_ms DESC)`
+- `idx_messages_r2` partial index on `(r2_key)` where `r2_key IS NOT NULL`
+
+## Binary attachments → R2
+
+`image`, `video`, `audio`, and `file` messages get their bytes pulled from LINE's content endpoint and stashed in the `lizard-attachments` R2 bucket. The DB row's `r2_key` points at the object. To pull the bytes locally:
+
+```bash
+wrangler r2 object get lizard-attachments <r2_key> --file ./local-name
+```
+
+LINE retains content for ~7 days, so a NULL `r2_key` on a binary row older than that is unrecoverable. Within the window, you can re-fetch by hitting `GET /v2/bot/message/{message_id}/content` with the channel access token.
 
 ## Time handling
 

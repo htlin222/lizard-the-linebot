@@ -13,7 +13,10 @@ import urllib.request
 
 SKILL_ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKILL_ENV = SKILL_ROOT / ".env"
-PROJECT_ENV = pathlib.Path("/Users/htlin/lizard-the-linebot/.env")
+# Resolves to <repo-root>/.env when the skill lives at <repo>/.claude/skills/line-inbox/.
+# Path(__file__).resolve() follows symlinks, so this stays correct even when the
+# skill folder is symlinked in from another repo.
+PROJECT_ENV = SKILL_ROOT.parents[2] / ".env"
 
 
 def load_creds() -> tuple[str, str]:
@@ -21,7 +24,7 @@ def load_creds() -> tuple[str, str]:
 
     1. LINE_INBOX_ENV=/path/to/.env (explicit override)
     2. Skill-local .env (next to SKILL.md) — makes the skill portable
-    3. Project .env at /Users/htlin/lizard-the-linebot/.env — fallback
+    3. Project .env at <repo>/.env (resolved relative to this script) — fallback
     4. Shell env vars (TURSO_*) — last resort
 
     File paths win over shell env vars because the user has another
@@ -217,6 +220,26 @@ def cmd_mentions(args):
     return execute(sql, [args.n])
 
 
+def cmd_attachments(args):
+    """Binary-type messages with their R2 archival state.
+
+    --missing filters to rows where r2_key IS NULL — useful for spotting
+    download failures still within the 7-day LINE retention window."""
+    where = "WHERE message_type IN ('image','video','audio','file')"
+    if args.missing:
+        where += " AND r2_key IS NULL"
+    sql = (
+        "SELECT id, message_type, "
+        "  coalesce(r2_key, '(missing)') AS r2_key, "
+        "  user_display_name, "
+        "  substr(coalesce(file_name,''), 1, 30) AS file_name, "
+        "  datetime(line_timestamp_ms/1000,'unixepoch','+8 hours') AS at_tw "
+        f"FROM messages {where} "
+        "ORDER BY id DESC LIMIT ?"
+    )
+    return execute(sql, [args.n])
+
+
 def cmd_sql(args):
     return execute(args.sql)
 
@@ -258,6 +281,18 @@ def main() -> None:
     )
     sp.add_argument("-n", type=int, default=20)
     sp.set_defaults(fn=cmd_mentions)
+
+    sp = sub.add_parser(
+        "attachments",
+        help="image/video/audio/file rows + their R2 keys",
+    )
+    sp.add_argument("-n", type=int, default=20)
+    sp.add_argument(
+        "--missing",
+        action="store_true",
+        help="only show rows where r2_key IS NULL (likely failed downloads)",
+    )
+    sp.set_defaults(fn=cmd_attachments)
 
     sp = sub.add_parser("sql", help="raw SELECT (no params)")
     sp.add_argument("sql")
