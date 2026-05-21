@@ -3,6 +3,7 @@ export interface Env {
   LINE_CHANNEL_ACCESS_TOKEN: string;
   TURSO_DATABASE_URL: string;
   TURSO_AUTH_TOKEN: string;
+  ATTACHMENTS: R2Bucket;
 }
 
 export type SourceType = "user" | "group" | "room";

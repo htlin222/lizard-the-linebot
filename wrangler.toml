@@ -12,3 +12,10 @@ workers_dev = true
 
 [observability]
 enabled = true
+
+# Binary content (image / video / audio / file) is downloaded from LINE
+# and stored in this R2 bucket keyed by YYYY-MM/<messageId>.
+# Create the bucket once:  wrangler r2 bucket create lizard-attachments
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "lizard-attachments"

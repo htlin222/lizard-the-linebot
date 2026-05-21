@@ -51,3 +51,14 @@ export async function insertMessage(
     row.is_self_mention,
   ]);
 }
+
+export async function updateR2Key(
+  db: Connection,
+  webhookEventId: string,
+  r2Key: string,
+): Promise<void> {
+  await db.execute(
+    "UPDATE messages SET r2_key = ? WHERE webhook_event_id = ?",
+    [r2Key, webhookEventId],
+  );
+}

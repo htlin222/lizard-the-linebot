@@ -98,6 +98,10 @@ The reply gate is `shouldReply()` at the bottom of `src/index.ts` — checks `ev
 
 To receive group events at all, **Allow bot to join group chats** must be **Enabled** in the LINE Console → Messaging API tab.
 
+### Binary attachments → R2
+
+For `image`, `video`, `audio`, and `file` messages, the worker also pulls the bytes from LINE (`GET /v2/bot/message/{id}/content`) and stashes them in the `lizard-attachments` R2 bucket — keyed as `YYYY-MM/<messageId>`, with `Content-Type` preserved. The DB row's `r2_key` column gets the key. LINE only keeps content for ~7 days, so this is a one-shot capture. The download runs in `ctx.waitUntil()` so the webhook still 200s in ~milliseconds.
+
 ### Quote-reply (replying to a previous message)
 
 When someone replies to message X and your message ends up in our archive, LINE includes `quotedMessageId: X.message_id` in the payload. We store it in `quoted_message_id`, and if X is also in our archive (it usually is now, since groups save everything) you can JOIN them. The skill exposes this via:
@@ -120,6 +124,7 @@ After setup you'll have something like:
 | Webhook endpoint | `POST /webhook` |
 | Health check | `GET /` → `lizard is alive` |
 | Turso DB | `lizard` (pick a region close to you, e.g. `aws-ap-northeast-1` Tokyo) |
+| R2 bucket | `lizard-attachments` (holds image/video/audio/file bytes, keyed `YYYY-MM/<messageId>`) |
 | LINE channel | your own `lizard-inbox` (LINE assigns `@<bot-id>` + a numeric channel ID) |
 | Cloudflare secrets | `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` |
 
@@ -202,13 +207,14 @@ Apply with `turso db shell lizard < schema/002_add_xxx.sql`. The
 `raw_payload` column already has the full event JSON, so historical rows can
 be backfilled with a `UPDATE … SET xxx = json_extract(raw_payload, '$.…')` pass.
 
-### Download media bytes
+### Customize attachment archival
 
-LINE keeps content available for ~7 days at `GET /v2/bot/message/{messageId}/content`. To archive:
+The R2 archival path is in `archiveContent()` in `src/index.ts`. Common customizations:
 
-1. Add a column for the storage key (R2 path or a BLOB).
-2. In `src/index.ts`, after the INSERT, if `message_type ∈ {image, video, audio, file}`, fetch the content and either store as `BLOB` (Turso) or PUT to R2 with the message ID as key.
-3. Don't block the webhook reply — wrap the download in `ctx.waitUntil(...)`.
+- **Different key shape** — change the `${yyyymm}/${messageId}` line. Note: R2 list operations filter by prefix, so date-bucketing keeps listings cheap.
+- **Per-type routing** — gate on `row.message_type` before calling `archiveContent` (e.g. skip audio if you don't care).
+- **Public access** — R2 buckets are private by default. Either flip the bucket to public (`wrangler r2 bucket dev-url enable`) or mint signed URLs from a separate worker route.
+- **Different store entirely** — swap `env.ATTACHMENTS.put` for an HTTPS API call (Resend/Gmail/Drive). The shape of the function stays the same.
 
 ### Change worker region / move closer to user
 
