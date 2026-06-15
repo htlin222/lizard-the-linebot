@@ -4,6 +4,7 @@ node_modules/
 .env.*
 !.env.example
 personal.config.yml
+/references
 .wrangler/
 dist/
 *.log
